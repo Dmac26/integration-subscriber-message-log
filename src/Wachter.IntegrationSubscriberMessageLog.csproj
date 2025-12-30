@@ -1,0 +1,53 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<OutputType>Exe</OutputType>
+		<TargetFramework>net10.0</TargetFramework>
+		<RootNamespace>Wachter.IntegrationSubscriberMessageLog</RootNamespace>
+		<AssemblyName>Wachter.IntegrationSubscriberMessageLog</AssemblyName>
+		<Nullable>enable</Nullable>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<RuntimeIdentifier>win-x64</RuntimeIdentifier>
+	</PropertyGroup>
+
+	<PropertyGroup Condition="'$(Configuration)' == 'Debug'">
+		<SelfContained>false</SelfContained>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="RabbitMQ.Client" Version="6.8.1" />
+		<PackageReference Include="Serilog.Sinks.File" Version="6.0.0" />
+		<PackageReference Include="System.Configuration.ConfigurationManager" Version="10.0.0" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.0" />
+		<PackageReference Include="Keeper.SecretsManager" Version="17.0.0" />
+		<PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.1" />
+		<PackageReference Include="Microsoft.Extensions.Hosting.WindowsServices" Version="10.0.0" />
+		<PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.1" />
+		<PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="10.0.1" />
+	</ItemGroup>
+
+	<!-- Wachter Enterprise DLL references (local Dependencies folder) -->
+	<ItemGroup>
+		<Reference Include="Wachter.Enterprise.Configuration">
+			<HintPath>Dependencies\Wachter.Enterprise.Configuration.dll</HintPath>
+		</Reference>
+		<Reference Include="Wachter.Enterprise.Configuration.DotNet">
+			<HintPath>Dependencies\Wachter.Enterprise.Configuration.DotNet.dll</HintPath>
+		</Reference>
+		<Reference Include="Wachter.Enterprise.Messaging">
+			<HintPath>Dependencies\Wachter.Enterprise.Messaging.dll</HintPath>
+		</Reference>
+		<Reference Include="Wachter.Enterprise.Messaging.JsonDotNet">
+			<HintPath>Dependencies\Wachter.Enterprise.Messaging.JsonDotNet.dll</HintPath>
+		</Reference>
+		<Reference Include="Wachter.RabbitMq">
+			<HintPath>Dependencies\Wachter.RabbitMq.dll</HintPath>
+		</Reference>
+	</ItemGroup>
+
+	<ItemGroup>
+		<None Update="appsettings.json">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
+	</ItemGroup>
+</Project>
