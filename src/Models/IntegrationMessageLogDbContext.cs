@@ -8,5 +8,5 @@ public class IntegrationMessageLogDbContext : DbContext
     {
     }
 
-    public DbSet<IntegrationMessageLog> IntegrationMessageLogs { get; set; } = null!;
+    public DbSet<MessageLog>   MessageLog { get; set; } = null!;
 }

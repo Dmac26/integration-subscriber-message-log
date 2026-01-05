@@ -1,13 +1,18 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace Wachter.IntegrationSubscriberMessageLog.Models
 {
-    public class IntegrationMessageLog
+    public class MessageLog
     {
-        public Guid MessageId { get; set; }
-        public DateTime ReceivedDateTime { get; set; }
-        public string SourceSystem { get; set; } = null!;
-        public string EventType { get; set; } = null!;
-        public string SerializedContent { get; set; } = null!;
-        public DateTime? ProcessedDateTime { get; set; }
-        public string? ErrorMessage { get; set; }
+        [Key] // Optional but safe since name isn't convention
+        public Guid MessageLogId { get; set; } // Changed back to MessageId to match PK column
+
+        public string Exchange { get; set; } = null!;
+
+        public string MessageStatus { get; set; } = null!;
+
+        public string Payload { get; set; } = null!;
+
+        public bool FailureAddressed { get; set; } // assuming bit/bool; change to int if it's not
     }
 }

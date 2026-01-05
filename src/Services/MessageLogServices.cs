@@ -1,16 +1,16 @@
-using System;
-using System.Text;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Storage;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Hosting;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 using Serilog;
-using Microsoft.EntityFrameworkCore;
-using Wachter.IntegrationSubscriberMessageLog.Models;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.DependencyInjection;
-using Wachter.IntegrationSubscriberMessageLog.Resolvers;
-using System.Security.Cryptography.X509Certificates;
 using System.Net.Security;
-using Microsoft.Extensions.Configuration;
+using System.Text;
+using Wachter.IntegrationSubscriberMessageLog.Models;
+using Wachter.IntegrationSubscriberMessageLog.Resolvers;
+//using Microsoft.EntityFrameworkCore.Metadata;
 
 namespace Wachter.IntegrationSubscriberMessageLog.Services
 {
@@ -37,7 +37,47 @@ namespace Wachter.IntegrationSubscriberMessageLog.Services
 				_log.Information("Config VirtualHost: {VirtualHost}", _configuration["RabbitMq:VirtualHost"] ?? "(null)");
 				_log.Information("-------------------------------------------------------------------------------------");
 
-				var secretTitle = "RabbitMq";
+                try
+                {
+                    // Use the relational model to avoid metadata extensions
+                    var relational = _dbContext.GetService<IRelationalDatabaseFacadeDependencies>();
+                    var entityType = _dbContext.Model.FindEntityType(typeof(MessageLog));
+
+                    if (entityType == null)
+                    {
+                        _log.Error("EF Core cannot find entity type IntegrationMessageLog - check namespace or registration");
+                    }
+                    else
+                    {
+                        var primaryKey = entityType.FindPrimaryKey();
+                        if (primaryKey == null)
+                        {
+                            _log.Error("EF Core reports NO primary key defined for IntegrationMessageLog");
+                        }
+                        else
+                        {
+                            var pkProperty = primaryKey.Properties.FirstOrDefault()?.Name;
+                            _log.Information("EF Core sees primary key as property: {PkProperty}", pkProperty ?? "none");
+                        }
+
+                        _log.Information("Properties EF Core sees for IntegrationMessageLog:");
+                        foreach (var prop in entityType.GetProperties())
+                        {
+                            var columnName = prop.GetColumnName();
+                            _log.Information("  Property: {Name} -> Column: {ColumnName}", prop.Name, columnName ?? "no mapping");
+                        }
+
+                        // Also log the table name EF is using
+                        var tableName = entityType.GetTableName();
+                        _log.Information("EF Core is mapping IntegrationMessageLog to table: {TableName}", tableName ?? "none");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _log.Error(ex, "Error inspecting EF model (this is expected if extensions clash)");
+                }
+
+                var secretTitle = "RabbitMq";
 
 				var (username, password) = await KeeperResolver.GetRabbitCredentialsAsync(secretTitle);
 
@@ -89,20 +129,20 @@ namespace Wachter.IntegrationSubscriberMessageLog.Services
 				var body = ea.Body.Span;
 				var message = Encoding.UTF8.GetString(body);
 
-				var logEntry = new IntegrationMessageLog
-				{
-					MessageId = Guid.NewGuid(),
-					ReceivedDateTime = DateTime.UtcNow,
-					SourceSystem = "Unknown",
-					EventType = "Unknown",
-					SerializedContent = message
-				};
+                var logEntry = new MessageLog
+                {
+                    MessageLogId = Guid.NewGuid(),
+                    Exchange = "wachter.logging.message.log",
+                    MessageStatus = "Received",
+                    Payload = message,
+                    FailureAddressed = false // initial value
+                };
 
-				_dbContext.IntegrationMessageLogs.Add(logEntry);
+                _dbContext.MessageLog.Add(logEntry);
 				_dbContext.SaveChanges();
 
 				_channel?.BasicAck(ea.DeliveryTag, false);
-				_log.Information("Logged message {MessageId}", logEntry.MessageId);
+				_log.Information("Logged message {MessageLogId}", logEntry.MessageLogId);
 			}
 			catch (Exception ex)
 			{
